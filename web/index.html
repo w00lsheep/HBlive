@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HBlive · MTV Hondelage Herren</title>
+  <meta name="description" content="Spielplan, Ergebnisse und Tabellen der 1. und 2. Herren des MTV Hondelage – automatisch aktualisiert aus nuLiga.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%232a78d6'/%3E%3Cpath d='M9 16h14M16 9v14' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>MTV Hondelage <span class="muted">· Herren</span></h1>
+          <p class="sub" id="season">Spielplan, Ergebnisse &amp; Tabellen</p>
+        </div>
+      </div>
+      <div class="status" aria-live="polite">
+        <span class="dot" id="status-dot" aria-hidden="true"></span>
+        <span id="status-text">Lade Daten …</span>
+        <button class="btn icon" id="refresh-btn" type="button" title="Jetzt aktualisieren" aria-label="Jetzt aktualisieren">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+        </button>
+        <a class="btn" id="ics-link" href="calendar.ics" title="Alle Spiele als Kalender abonnieren">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Kalender</span>
+        </a>
+        <button class="btn icon" id="theme-btn" type="button" title="Hell/Dunkel umschalten" aria-label="Hell/Dunkel umschalten">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav class="filters" aria-label="Mannschaft wählen">
+      <div class="segmented" id="team-filter" role="tablist"></div>
+    </nav>
+
+    <section id="today" class="today" hidden aria-label="Spiele heute"></section>
+
+    <section class="teams" id="teams" aria-label="Mannschaften"></section>
+
+    <section class="panel" aria-labelledby="schedule-h">
+      <div class="panel-head">
+        <h2 id="schedule-h">Spielplan</h2>
+        <div class="segmented small" id="schedule-filter" role="tablist">
+          <button type="button" data-v="upcoming" role="tab">Kommende</button>
+          <button type="button" data-v="results" role="tab">Ergebnisse</button>
+          <button type="button" data-v="all" role="tab">Alle</button>
+        </div>
+      </div>
+      <div id="schedule"></div>
+    </section>
+
+    <section class="tables" id="tables" aria-label="Tabellen"></section>
+  </main>
+
+  <footer class="wrap footer">
+    <p>Daten: <a id="source-link" href="https://hvnb-handball.liga.nu" target="_blank" rel="noopener">nuLiga · Handballverband Niedersachsen-Bremen</a>.
+      Ergebnisse erscheinen, sobald der Spielbericht in nuLiga eingetragen ist. <span id="generated"></span></p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
