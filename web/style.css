@@ -1,17 +1,44 @@
 /* HBlive – Liquid Glass
  * Ebenen: 1) Ambient-Licht (pastellige, weiche Lichtflächen)
  *         2) Glas (frosted + glossy Rand, weicher Ambient-Schatten)
- *         3) Inhalt (klare, kontrastreiche Tinte – nie transparent) */
+ *         3) Inhalt (klare, kontrastreiche Tinte – nie transparent)
+ *
+ * Designvarianten setzen nur Farbtöne (OKLCH-Hue) und Sättigung; alle Farben werden
+ * daraus abgeleitet – hell und dunkel mit festen Helligkeiten, damit der Kontrast
+ * in jeder Variante gleich bleibt (Akzent ≥ 6:1 auf Glas, geprüft). */
 
+/* ---------- Varianten: Farbtöne ---------- */
+:root, :root[data-variant="lavendel"] {
+  --h-accent: 275; --c-accent: 0.15; --c-base: 0.012;
+  --h1: 295; --h2: 245; --h3: 50; --h4: 160; --c-glow: 0.075;
+}
+:root[data-variant="morgennebel"] {
+  --h-accent: 225; --c-accent: 0.12; --c-base: 0.012;
+  --h1: 205; --h2: 185; --h3: 250; --h4: 150; --c-glow: 0.07;
+}
+:root[data-variant="abendrot"] {
+  --h-accent: 40; --c-accent: 0.12; --c-base: 0.014;
+  --h1: 55; --h2: 15; --h3: 85; --h4: 320; --c-glow: 0.075;
+}
+:root[data-variant="salbei"] {
+  --h-accent: 165; --c-accent: 0.10; --c-base: 0.012;
+  --h1: 145; --h2: 115; --h3: 185; --h4: 80; --c-glow: 0.065;
+}
+:root[data-variant="graphit"] {
+  --h-accent: 260; --c-accent: 0.04; --c-base: 0.004;
+  --h1: 260; --h2: 240; --h3: 60; --h4: 200; --c-glow: 0.02;
+}
+
+/* ---------- Hell ---------- */
 :root {
   color-scheme: light;
 
   /* Basis & Licht */
-  --base: #eef0f6;
-  --glow-1: rgba(196, 188, 240, 0.55);   /* Lavendel */
-  --glow-2: rgba(178, 206, 244, 0.50);   /* Himmelblau */
-  --glow-3: rgba(246, 214, 198, 0.48);   /* Pfirsich */
-  --glow-4: rgba(196, 230, 212, 0.45);   /* Salbei */
+  --base: oklch(0.955 var(--c-base) var(--h-accent));
+  --glow-1: oklch(0.86 var(--c-glow) var(--h1) / 0.60);
+  --glow-2: oklch(0.87 var(--c-glow) var(--h2) / 0.55);
+  --glow-3: oklch(0.90 var(--c-glow) var(--h3) / 0.50);
+  --glow-4: oklch(0.90 var(--c-glow) var(--h4) / 0.45);
 
   /* Glas */
   --glass: rgba(255, 255, 255, 0.56);
@@ -25,18 +52,20 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
     inset 0 -1px 0 rgba(255, 255, 255, 0.25),
     0 1px 2px rgba(60, 68, 120, 0.04),
-    0 12px 32px -14px rgba(60, 68, 120, 0.20);
+    0 12px 32px -14px oklch(0.35 0.06 var(--h-accent) / 0.22);
 
   /* Tinte (≥ 4.5:1 auf Glas) */
-  --ink: #1c1f30;
-  --ink-2: #474c64;
-  --ink-3: #5f6480;
-  --line: rgba(40, 46, 80, 0.08);
+  --ink: oklch(0.22 0.02 var(--h-accent));
+  --ink-2: oklch(0.42 0.025 var(--h-accent));
+  --ink-3: oklch(0.50 0.025 var(--h-accent));
+  --line: oklch(0.30 0.04 var(--h-accent) / 0.09);
 
-  /* Pastell-Akzente */
-  --accent: #3f4fb0;            /* Text/Links */
-  --accent-wash: rgba(129, 145, 230, 0.16);
-  --accent-wash-2: rgba(129, 145, 230, 0.26);
+  /* Akzent */
+  --accent: oklch(0.45 var(--c-accent) var(--h-accent));
+  --accent-wash: oklch(0.70 var(--c-accent) var(--h-accent) / 0.16);
+  --accent-wash-2: oklch(0.70 var(--c-accent) var(--h-accent) / 0.26);
+
+  /* Status – bewusst fest, unabhängig von der Variante */
   --win-bg: #d3ecdd;  --win-ink: #1d6640;
   --draw-bg: #e2e4ef; --draw-ink: #3f4459;
   --loss-bg: #f5d6db; --loss-ink: #9a2f3e;
@@ -55,16 +84,17 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* ---------- Dunkel (System-Einstellung und manueller Schalter) ---------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --base: #12141c;
-    --glow-1: rgba(120, 108, 200, 0.30);
-    --glow-2: rgba(80, 120, 190, 0.26);
-    --glow-3: rgba(190, 130, 120, 0.18);
-    --glow-4: rgba(90, 160, 130, 0.18);
-    --glass: rgba(38, 42, 60, 0.52);
-    --glass-strong: rgba(44, 48, 68, 0.78);
+    --base: oklch(0.19 calc(var(--c-base) * 1.5) var(--h-accent));
+    --glow-1: oklch(0.42 var(--c-glow) var(--h1) / 0.42);
+    --glow-2: oklch(0.40 var(--c-glow) var(--h2) / 0.38);
+    --glow-3: oklch(0.42 var(--c-glow) var(--h3) / 0.24);
+    --glow-4: oklch(0.42 var(--c-glow) var(--h4) / 0.24);
+    --glass: oklch(0.30 0.03 var(--h-accent) / 0.52);
+    --glass-strong: oklch(0.32 0.03 var(--h-accent) / 0.80);
     --glass-well: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.10);
     --glass-edge: rgba(0, 0, 0, 0.25);
@@ -73,13 +103,13 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.12),
       inset 0 -1px 0 rgba(255, 255, 255, 0.03),
       0 16px 40px -18px rgba(0, 0, 0, 0.55);
-    --ink: #eef0f8;
-    --ink-2: #bcc0d4;
-    --ink-3: #9a9fb8;
+    --ink: oklch(0.95 0.008 var(--h-accent));
+    --ink-2: oklch(0.80 0.02 var(--h-accent));
+    --ink-3: oklch(0.70 0.025 var(--h-accent));
     --line: rgba(255, 255, 255, 0.07);
-    --accent: #aab5ff;
-    --accent-wash: rgba(150, 165, 255, 0.12);
-    --accent-wash-2: rgba(150, 165, 255, 0.20);
+    --accent: oklch(0.82 calc(var(--c-accent) * 0.7) var(--h-accent));
+    --accent-wash: oklch(0.75 var(--c-accent) var(--h-accent) / 0.13);
+    --accent-wash-2: oklch(0.75 var(--c-accent) var(--h-accent) / 0.21);
     --win-bg: rgba(120, 200, 155, 0.20);  --win-ink: #a6e3c0;
     --draw-bg: rgba(190, 195, 225, 0.14); --draw-ink: #cfd2e6;
     --loss-bg: rgba(240, 140, 158, 0.20); --loss-ink: #f5b7c1;
@@ -89,13 +119,13 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --base: #12141c;
-  --glow-1: rgba(120, 108, 200, 0.30);
-  --glow-2: rgba(80, 120, 190, 0.26);
-  --glow-3: rgba(190, 130, 120, 0.18);
-  --glow-4: rgba(90, 160, 130, 0.18);
-  --glass: rgba(38, 42, 60, 0.52);
-  --glass-strong: rgba(44, 48, 68, 0.78);
+  --base: oklch(0.19 calc(var(--c-base) * 1.5) var(--h-accent));
+  --glow-1: oklch(0.42 var(--c-glow) var(--h1) / 0.42);
+  --glow-2: oklch(0.40 var(--c-glow) var(--h2) / 0.38);
+  --glow-3: oklch(0.42 var(--c-glow) var(--h3) / 0.24);
+  --glow-4: oklch(0.42 var(--c-glow) var(--h4) / 0.24);
+  --glass: oklch(0.30 0.03 var(--h-accent) / 0.52);
+  --glass-strong: oklch(0.32 0.03 var(--h-accent) / 0.80);
   --glass-well: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-edge: rgba(0, 0, 0, 0.25);
@@ -104,13 +134,13 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(255, 255, 255, 0.03),
     0 16px 40px -18px rgba(0, 0, 0, 0.55);
-  --ink: #eef0f8;
-  --ink-2: #bcc0d4;
-  --ink-3: #9a9fb8;
+  --ink: oklch(0.95 0.008 var(--h-accent));
+  --ink-2: oklch(0.80 0.02 var(--h-accent));
+  --ink-3: oklch(0.70 0.025 var(--h-accent));
   --line: rgba(255, 255, 255, 0.07);
-  --accent: #aab5ff;
-  --accent-wash: rgba(150, 165, 255, 0.12);
-  --accent-wash-2: rgba(150, 165, 255, 0.20);
+  --accent: oklch(0.82 calc(var(--c-accent) * 0.7) var(--h-accent));
+  --accent-wash: oklch(0.75 var(--c-accent) var(--h-accent) / 0.13);
+  --accent-wash-2: oklch(0.75 var(--c-accent) var(--h-accent) / 0.21);
   --win-bg: rgba(120, 200, 155, 0.20);  --win-ink: #a6e3c0;
   --draw-bg: rgba(190, 195, 225, 0.14); --draw-ink: #cfd2e6;
   --loss-bg: rgba(240, 140, 158, 0.20); --loss-ink: #f5b7c1;
@@ -364,6 +394,29 @@ table.standings { width: 100%; border-collapse: separate; border-spacing: 0; fon
   background-color: var(--glass-strong); z-index: 30; max-width: calc(100% - 32px);
 }
 
+/* ------------------------------------------------------------ Variantenauswahl */
+.variant-wrap { position: relative; }
+.variant-menu {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 40; width: 264px;
+  border-radius: var(--radius-lg); padding: 8px; background-color: var(--glass-strong);
+}
+.variant-menu[hidden] { display: none; }
+.variant-menu h3 { font-size: 13px; font-weight: 650; color: var(--ink-2); padding: 6px 10px 8px; letter-spacing: 0; }
+.variant-opt {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 6px 10px;
+  border: 0; border-radius: 14px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600;
+  text-align: left; cursor: pointer; transition: background-color var(--t-fast) var(--ease);
+}
+.variant-opt:hover { background: var(--glass-well); }
+.variant-opt[aria-checked="true"] { background: var(--accent-wash-2); }
+.variant-opt small { display: block; color: var(--ink-3); font-size: 12.5px; font-weight: 500; }
+.variant-opt .check { margin-left: auto; color: var(--accent); opacity: 0; }
+.variant-opt[aria-checked="true"] .check { opacity: 1; }
+.swatch {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  border: 1px solid var(--glass-border); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 2px 6px rgba(0,0,0,.08);
+}
+
 /* ------------------------------------------------------------ Bewegung */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes breathe { 50% { opacity: 0.35; transform: scale(0.8); } }
@@ -423,6 +476,7 @@ table.standings { width: 100%; border-collapse: separate; border-spacing: 0; fon
   .res { width: 28px; height: 28px; }
   .standings .hide-sm { display: none; }
   .toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .variant-menu { position: fixed; left: 16px; right: 16px; top: auto; width: auto; bottom: calc(92px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 380px) {
   .split { grid-template-columns: minmax(0, 1fr); }

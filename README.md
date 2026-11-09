@@ -15,6 +15,9 @@ und ein Dashboard zeigt sie an. Es aktualisiert sich von selbst.
   Spiele sowie Spielbericht und PDF.
 - **Tabellen** beider Staffeln, die eigene Mannschaft ist hervorgehoben.
 - Liquid-Glass-Design (Milchglas, pastelliges Umgebungslicht), hell/dunkel, auf dem Handy als App-Layout mit schwebender Tab-Leiste (Alle / 1. Herren / 2. Herren). Respektiert „Transparenz reduzieren“ und „Bewegung reduzieren“.
+- **5 Designvarianten** über den Paletten-Knopf: Lavendel (Standard), Morgennebel, Abendrot,
+  Salbei, Graphit – jeweils hell und dunkel. Die Wahl wird pro Gerät gespeichert; per Link
+  geht es direkt mit `?design=salbei` usw.
 - **Kalender-Abo** (`calendar.ics`) mit allen Spielen.
 - Neues Ergebnis da? Das Dashboard blendet einen Hinweis ein und hebt das Spiel hervor.
 

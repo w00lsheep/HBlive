@@ -408,6 +408,70 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, 8000);
   }
 
+  // ------------------------------------------------------------------ Designvarianten
+  // Swatch-Farben nur zur Vorschau; die eigentlichen Farben kommen aus style.css (OKLCH-Hues).
+  const VARIANTS = [
+    { id: "lavendel", name: "Lavendel", desc: "Kühl & ruhig – Standard", sw: ["#c8c0f2", "#b9cdf3", "#f3d6c6"] },
+    { id: "morgennebel", name: "Morgennebel", desc: "Frisch, Aqua & Himmel", sw: ["#b4dbe8", "#bfe3dc", "#c9d3f2"] },
+    { id: "abendrot", name: "Abendrot", desc: "Warm, Pfirsich & Sand", sw: ["#f4cfb8", "#f3c9c4", "#eedcb6"] },
+    { id: "salbei", name: "Salbei", desc: "Natürlich & sanft", sw: ["#c6e2cf", "#dbe3bb", "#bfe0de"] },
+    { id: "graphit", name: "Graphit", desc: "Neutral, fast farblos", sw: ["#dfe1e6", "#e8e8e6", "#d8dde5"] },
+  ];
+  const CHECK = '<svg class="ico check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  function setVariant(id, persist = true) {
+    const v = VARIANTS.find((x) => x.id === id) || VARIANTS[0];
+    document.documentElement.dataset.variant = v.id;
+    if (persist) store.set("hblive.variant", v.id);
+    document.querySelectorAll(".variant-opt").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.v === v.id)));
+    const base = getComputedStyle(document.documentElement).getPropertyValue("--base").trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => base && m.setAttribute("content", base));
+  }
+
+  function buildVariantMenu() {
+    $("#variant-menu").innerHTML = `<h3>Design</h3>` + VARIANTS.map((v) => `
+      <button type="button" class="variant-opt" role="menuitemradio" data-v="${v.id}" aria-checked="false">
+        <span class="swatch" style="background:linear-gradient(135deg, ${v.sw[0]} 0%, ${v.sw[1]} 55%, ${v.sw[2]} 100%)" aria-hidden="true"></span>
+        <span>${esc(v.name)}<small>${esc(v.desc)}</small></span>${CHECK}
+      </button>`).join("");
+  }
+
+  function toggleVariantMenu(open) {
+    const menu = $("#variant-menu");
+    const btn = $("#variant-btn");
+    const show = open ?? menu.hidden;
+    menu.hidden = !show;
+    btn.setAttribute("aria-expanded", String(show));
+    if (show) (menu.querySelector('[aria-checked="true"]') || menu.querySelector(".variant-opt"))?.focus();
+  }
+
+  buildVariantMenu();
+  {
+    const fromUrl = new URLSearchParams(location.search).get("design");
+    if (fromUrl && VARIANTS.some((v) => v.id === fromUrl)) setVariant(fromUrl);
+    else setVariant(store.get("hblive.variant", "lavendel"), false);
+  }
+  $("#variant-btn").addEventListener("click", (e) => { e.stopPropagation(); toggleVariantMenu(); });
+  $("#variant-menu").addEventListener("click", (e) => {
+    const b = e.target.closest(".variant-opt");
+    if (!b) return;
+    setVariant(b.dataset.v);
+    toggleVariantMenu(false);
+    $("#variant-btn").focus();
+  });
+  $("#variant-menu").addEventListener("keydown", (e) => {
+    const items = [...document.querySelectorAll(".variant-opt")];
+    const i = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+  document.addEventListener("click", (e) => {
+    if (!$("#variant-menu").hidden && !e.target.closest(".variant-wrap")) toggleVariantMenu(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#variant-menu").hidden) { toggleVariantMenu(false); $("#variant-btn").focus(); }
+  });
+
   // ------------------------------------------------------------------ events
   function setTheme(t) {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
@@ -428,6 +492,7 @@
     const next = dark ? "light" : "dark";
     setTheme(next);
     store.set("hblive.theme", next);
+    setVariant(document.documentElement.dataset.variant, false);
   });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && (!state.lastFetch || Date.now() - state.lastFetch > 20_000)) load();
