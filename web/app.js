@@ -33,6 +33,8 @@
   const ko = (g) => (g.kickoff ? new Date(g.kickoff) : null);
   const gameKey = (t, g) => `${t.key}:${g.number}`;
   const dfDay = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
+  const dfDate = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
+  const dfWd = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "Europe/Berlin" });
   const dfMonth = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" });
   const dfTime = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
   const dfKey = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Berlin" });
@@ -95,6 +97,15 @@
     document.querySelectorAll("#schedule-filter button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.v === state.view)));
   }
 
+  // SVG-Icons (einheitlich: 24er Raster, 1.75px Strich, currentColor)
+  const ICON = {
+    pin: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+    clock: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    whistle: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="5"/><path d="M12.5 10.5 20 7v4l-5.5 1.5"/></svg>',
+    doc: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4M9.5 12.5h5M9.5 16h5"/></svg>',
+    ext: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v4.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H10"/></svg>',
+  };
+
   function renderToday() {
     const el = $("#today");
     const now = Date.now();
@@ -114,31 +125,27 @@
       let pill, center;
       if (p === "live") {
         pill = `<span class="pill live">Live</span>`;
-        center = `<div class="countdown tnum" data-live="${k.getTime()}">${Math.max(1, Math.floor((now - k) / 60000))}'</div><small>läuft · Ergebnis folgt in nuLiga</small>`;
+        center = `<div class="countdown tnum" data-live="${k.getTime()}">${Math.max(1, Math.floor((now - k) / 60000))}'</div><small>läuft</small>`;
       } else if (p === "pending") {
-        pill = `<span class="pill pending">Ergebnis ausstehend</span>`;
-        center = `<div class="score tnum">–:–</div><small>Anpfiff war ${dfTime.format(k)} Uhr</small>`;
+        pill = `<span class="pill pending">Ergebnis folgt</span>`;
+        center = `<div class="score tnum">–:–</div><small>Abpfiff</small>`;
       } else if (p === "finished" || p === "special") {
         pill = `<span class="pill">Beendet</span>`;
-        const ht = g.halftime ? `<small>Halbzeit ${g.halftime.home}:${g.halftime.away}</small>` : g.result_note ? `<small>${esc(g.result_note)}</small>` : "";
+        const ht = g.halftime ? `<small class="tnum">HZ ${g.halftime.home}:${g.halftime.away}</small>` : g.result_note ? `<small>${esc(g.result_note)}</small>` : "";
         center = `<div class="score tnum">${esc(scoreFor(g))}</div>${ht}`;
       } else {
-        pill = `<span class="pill">Heute ${dfTime.format(k)} Uhr</span>`;
+        pill = `<span class="pill">${dfTime.format(k)} Uhr</span>`;
         center = `<div class="countdown tnum" data-ko="${k.getTime()}">${countdown(k - now)}</div><small>bis Anpfiff</small>`;
       }
       return `
-        <article class="match-hero ${p === "live" ? "is-live" : ""}">
-          <div class="eyebrow"><span><span class="pill team">${esc(t.label)}</span> ${esc(g.competition || "")}</span>${pill}</div>
+        <article class="match-hero glass ${p === "live" ? "is-live" : ""}">
+          <div class="eyebrow"><span class="pill team">${esc(t.label)}</span><span class="eyebrow-label">Heute</span>${pill}</div>
           <div class="teams-line">
             <div class="side home ${g.is_home ? "own" : ""}">${esc(g.home)}</div>
             <div class="center">${center}</div>
             <div class="side away ${!g.is_home ? "own" : ""}">${esc(g.away)}</div>
           </div>
-          <div class="meta">
-            <span>${esc(dfDay.format(k))} · ${dfTime.format(k)} Uhr</span>
-            ${g.venue_name ? `<span>📍 ${venueLink(g)}</span>` : ""}
-            ${g.referees ? `<span>SR: ${esc(g.referees)}</span>` : ""}
-          </div>
+          ${g.venue_name ? `<div class="meta">${ICON.pin}${venueLink(g)}</div>` : ""}
         </article>`;
     }).join("");
   }
@@ -150,50 +157,56 @@
     return `<a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener" title="Halle in Karte öffnen">${esc(name)}</a>`;
   }
 
+  const haChip = (g) => `<span class="ha-chip" title="${g.is_home ? "Heimspiel" : "Auswärtsspiel"}">${g.is_home ? "Heim" : "Auswärts"}</span>`;
+
   function renderTeams() {
     const now = Date.now();
     $("#teams").innerHTML = visibleTeams().map((t) => {
       const comp = t.competitions[0] || {};
       const row = (comp.standings || []).find((s) => s.is_own) || {};
       const n = (comp.standings || []).length;
-      const played = t.games.filter((g) => g.outcome);
-      const form = played.slice(-5);
+      const form = t.games.filter((g) => g.outcome).slice(-5);
       const next = t.games.find((g) => ["scheduled", "live"].includes(phase(g, now)));
       const last = [...t.games].reverse().find((g) => g.state !== "scheduled");
       const diff = row.goal_diff ?? (row.goals_for != null ? row.goals_for - row.goals_against : null);
 
       const nextHtml = next ? (() => {
         const k = ko(next);
-        const p = phase(next, now);
-        return `<div class="label">Nächstes Spiel · ${next.is_home ? "Heim" : "Auswärts"}</div>
+        const live = phase(next, now) === "live";
+        return `<div class="mini-head"><span class="label">Nächstes</span>${haChip(next)}</div>
           <div class="opp" title="${esc(next.opponent)}">${esc(next.opponent)}</div>
-          <div class="when">${k ? `${esc(dfDay.format(k))} · ${dfTime.format(k)} Uhr` : esc(next.date)}</div>
-          <div class="when tnum">${p === "live" ? `<span class="pill live">Live</span>` : k ? `<span data-ko="${k.getTime()}">${countdown(k - now)}</span>` : ""}</div>`;
-      })() : `<div class="label">Nächstes Spiel</div><div class="when">Keine weiteren Spiele</div>`;
+          <div class="when tnum">${k ? `${esc(dfDay.format(k))}, ${dfTime.format(k)}` : esc(next.date)}</div>
+          <div class="soon tnum">${live ? `<span class="pill live">Live</span>` : k ? `<span data-ko="${k.getTime()}">${countdown(k - now)}</span>` : ""}</div>`;
+      })() : `<div class="mini-head"><span class="label">Nächstes</span></div><div class="when">Saison beendet</div>`;
 
-      const lastHtml = last ? `<div class="label">Letztes Spiel · ${last.is_home ? "Heim" : "Auswärts"}</div>
+      const lastHtml = last ? `<div class="mini-head"><span class="label">Zuletzt</span>${haChip(last)}</div>
           <div class="opp" title="${esc(last.opponent)}">${esc(last.opponent)}</div>
-          <div class="big tnum">${resBadge(last)} ${last.goals_for != null ? `${last.goals_for}:${last.goals_against}` : esc(last.result_text || "")}</div>
-          <div class="when">${ko(last) ? esc(dfDay.format(ko(last))) : esc(last.date)}${last.result_note ? ` · ${esc(last.result_note)}` : ""}</div>`
-        : `<div class="label">Letztes Spiel</div><div class="when">Noch keine Spiele</div>`;
+          <div class="big tnum">${resBadge(last)}<span>${last.goals_for != null ? `${last.goals_for}:${last.goals_against}` : esc(last.result_text || "")}</span></div>`
+        : `<div class="mini-head"><span class="label">Zuletzt</span></div><div class="when">Noch keine Spiele</div>`;
 
       return `
-        <article class="card">
+        <article class="card glass">
           <div class="card-head">
-            <div><h2>${esc(t.label)}</h2><div class="league">${esc(comp.league || "")}</div></div>
-            ${comp.group_url ? `<a href="${esc(comp.group_url)}" target="_blank" rel="noopener">nuLiga ↗</a>` : ""}
+            <div class="card-title">
+              <h2>${esc(t.label)}</h2>
+              <div class="league">${esc(comp.league || "")}</div>
+            </div>
+            <div class="rank" aria-label="Tabellenplatz ${row.rank ?? "–"} von ${n || "–"}">
+              <span class="rank-num tnum">${row.rank ?? "–"}<span class="rank-dot">.</span></span>
+              <span class="rank-of">Platz von ${n || "–"}</span>
+            </div>
           </div>
           <div class="kpis">
-            <div class="kpi"><div class="label">Platz</div><div class="value tnum">${row.rank ?? "–"}.<small> / ${n || "–"}</small></div></div>
             <div class="kpi"><div class="label">Punkte</div><div class="value tnum">${row.points_plus ?? "–"}<small>:${row.points_minus ?? "–"}</small></div></div>
-            <div class="kpi"><div class="label">Bilanz S-U-N</div><div class="value tnum">${row.won ?? 0}-${row.drawn ?? 0}-${row.lost ?? 0}</div></div>
-            <div class="kpi"><div class="label">Tore</div><div class="value tnum">${diff != null ? (diff > 0 ? "+" : "") + diff : "–"}</div><div class="hint tnum">${row.goals_for ?? "–"}:${row.goals_against ?? "–"}</div></div>
+            <div class="kpi"><div class="label" title="Siege – Unentschieden – Niederlagen">S · U · N</div><div class="value tnum">${row.won ?? 0}<small>·</small>${row.drawn ?? 0}<small>·</small>${row.lost ?? 0}</div></div>
+            <div class="kpi"><div class="label">Tore</div><div class="value tnum" title="${row.goals_for ?? "–"}:${row.goals_against ?? "–"}">${diff != null ? (diff > 0 ? "+" : "") + diff : "–"}</div></div>
           </div>
-          <div class="form"><span class="label">Form</span>${form.length ? form.map((g) => {
+          <div class="form" aria-label="Form der letzten Spiele"><span class="label">Form</span><span class="form-badges">${form.length ? form.map((g) => {
             const r = g.goals_for != null ? `${g.goals_for}:${g.goals_against}` : g.result_note || "";
             const label = `${OUTCOME_LONG[g.outcome]} ${r} ${g.is_home ? "gegen" : "bei"} ${g.opponent}`;
             return `<span class="res ${g.outcome}" title="${esc(label)}" aria-label="${esc(label)}">${OUTCOME[g.outcome]}</span>`;
-          }).join("") : `<span class="muted">noch keine Ergebnisse</span>`}</div>
+          }).join("") : `<span class="muted">–</span>`}</span>
+            ${comp.group_url ? `<a class="nu-link" href="${esc(comp.group_url)}" target="_blank" rel="noopener">nuLiga ${ICON.ext}</a>` : ""}</div>
           <div class="split"><div class="mini">${nextHtml}</div><div class="mini">${lastHtml}</div></div>
         </article>`;
     }).join("") || `<p class="empty">Keine Mannschaften gefunden.</p>`;
@@ -217,37 +230,35 @@
       const p = phase(g, now);
       const m = k ? dfMonth.format(k) : "";
       const head = m !== month ? `<div class="month">${esc((month = m))}</div>` : "";
-      const tags = [];
-      if (showTeam) tags.push(`<span class="tag sm-only">${esc(t.label)}</span>`);
-      if (g.time_marker === "v") tags.push(`<span class="tag moved" title="${esc(g.time_note || "verlegt")}">verlegt</span>`);
       let result;
       if (p === "finished") {
-        result = `${resBadge(g)}<div><span class="tnum">${scoreFor(g)}</span>${g.halftime ? `<small class="tnum">HZ ${g.halftime.home}:${g.halftime.away}</small>` : ""}</div>`;
+        result = `${resBadge(g)}<div class="score-col"><span class="tnum">${scoreFor(g)}</span>${g.halftime ? `<small class="tnum">HZ ${g.halftime.home}:${g.halftime.away}</small>` : ""}</div>`;
       } else if (p === "special") {
-        result = `${resBadge(g)}<div><span>${esc(g.result_text || "")}</span><small>${esc(g.result_note || "")}</small></div>`;
+        result = `${resBadge(g)}<div class="score-col"><span>${esc(g.result_text || "")}</span><small>${esc(g.result_note || "")}</small></div>`;
       } else if (p === "live") {
         result = `<span class="pill live">Live</span>`;
       } else if (p === "pending") {
-        result = `<span class="pill pending">ausstehend</span>`;
+        result = `<span class="pill pending">Ergebnis folgt</span>`;
       } else {
-        result = k ? `<small class="muted" data-ko="${k.getTime()}">${countdown(k - now)}</small>` : "";
+        result = k ? `<span class="soon" data-ko="${k.getTime()}">${countdown(k - now)}</span>` : "";
       }
-      const links = [];
-      if (g.report_url) links.push(`<a href="${esc(g.report_url)}" target="_blank" rel="noopener">Spielbericht</a>`);
-      if (g.report_pdf_url) links.push(`<a href="${esc(g.report_pdf_url)}" target="_blank" rel="noopener">PDF</a>`);
+      const extras = [];
+      if (g.time_marker === "v") extras.push(`<span class="tag moved" title="${esc(g.time_note || "verlegt")}">verlegt</span>`);
+      if (g.referees) extras.push(`<span class="desk-only" title="Schiedsrichter">${ICON.whistle}${esc(g.referees)}</span>`);
+      if (g.report_url) extras.push(`<a href="${esc(g.report_url)}" target="_blank" rel="noopener">${ICON.doc}Bericht</a>`);
       const cls = ["game", g === nextGame?.g ? "next" : "", p === "live" ? "is-live" : "", state.flash.has(gameKey(t, g)) ? "flash" : ""].join(" ");
       return `${head}
         <div class="${cls}">
-          <div class="date tnum">${k ? esc(dfDay.format(k)) : esc(g.date)}<small>${g.time ? esc(g.time) + " Uhr" : ""}</small></div>
-          <div class="teamcol">${showTeam ? `<span class="pill team">${esc(t.label)}</span>` : `<span class="muted">Nr. ${esc(g.number)}</span>`}</div>
+          <div class="date tnum">${k ? dfDate.format(k) : esc(g.date)}<small>${k ? dfWd.format(k).replace(".", "") : esc(g.weekday)}${g.time ? " · " + esc(g.time) : ""}</small></div>
           <div class="match">
-            <div class="${g.is_home ? "own" : ""}"><span class="ha">H</span>${esc(g.home)}</div>
-            <div class="${!g.is_home ? "own" : ""}"><span class="ha">G</span>${esc(g.away)}</div>
+            ${showTeam ? `<span class="pill team">${esc(t.label)}</span>` : ""}
+            <div class="${g.is_home ? "own" : ""}">${esc(g.home)}</div>
+            <div class="${!g.is_home ? "own" : ""}">${esc(g.away)}</div>
           </div>
           <div class="result">${result}</div>
           <div class="info">
-            <div>${tags.join("")}${venueLink(g)}</div>
-            <div>${g.referees ? `SR: ${esc(g.referees)}` : ""}${links.length ? (g.referees ? " · " : "") + links.join(" · ") : ""}</div>
+            ${g.venue_name || g.venue_code ? `<span class="venue">${ICON.pin}${venueLink(g)}</span>` : ""}
+            ${extras.join("")}
           </div>
         </div>`;
     }).join("");
@@ -255,38 +266,41 @@
 
   function renderTables() {
     $("#tables").innerHTML = visibleTeams().flatMap((t) => t.competitions.map((c) => `
-      <section class="panel">
-        <div class="panel-head"><h2>Tabelle ${esc(t.label)}</h2><span class="muted">${esc(c.league)}</span></div>
+      <section class="panel glass">
+        <div class="panel-head"><h2>Tabelle <span class="muted">${esc(t.label)}</span></h2></div>
         <div class="tbl-wrap">
           <table class="standings">
-            <thead><tr><th>#</th><th class="l">Mannschaft</th><th title="Spiele">Sp</th><th class="hide-sm" title="Siege">S</th><th class="hide-sm" title="Unentschieden">U</th><th class="hide-sm" title="Niederlagen">N</th><th title="Tore">Tore</th><th title="Tordifferenz">+/-</th><th title="Punkte">Pkt</th></tr></thead>
+            <caption class="sr-only">Tabelle ${esc(c.league)}</caption>
+            <thead><tr><th>#</th><th class="l">Mannschaft</th><th title="Spiele">Sp</th><th class="hide-sm" title="Tore">Tore</th><th title="Tordifferenz">+/-</th><th title="Punkte">Pkt</th></tr></thead>
             <tbody>${(c.standings || []).map((s) => `
               <tr class="${s.is_own ? "own" : ""}">
                 <td>${s.rank ?? ""}</td>
-                <td class="l team">${s.team_url ? `<a href="${esc(s.team_url)}" target="_blank" rel="noopener" style="color:inherit">${esc(s.team)}</a>` : esc(s.team)}</td>
-                <td>${s.games}</td><td class="hide-sm">${s.won}</td><td class="hide-sm">${s.drawn}</td><td class="hide-sm">${s.lost}</td>
-                <td>${s.goals_for ?? ""}:${s.goals_against ?? ""}</td>
+                <td class="l team">${s.team_url ? `<a href="${esc(s.team_url)}" target="_blank" rel="noopener">${esc(s.team)}</a>` : esc(s.team)}</td>
+                <td>${s.games}</td>
+                <td class="hide-sm">${s.goals_for ?? ""}:${s.goals_against ?? ""}</td>
                 <td>${s.goal_diff > 0 ? "+" : ""}${s.goal_diff ?? ""}</td>
                 <td class="pts">${s.points_plus ?? ""}:${s.points_minus ?? ""}</td>
               </tr>`).join("")}
             </tbody>
           </table>
         </div>
+        <p class="panel-foot">${esc(c.league)}</p>
       </section>`)).join("");
   }
 
   function renderStatus() {
     const dot = $("#status-dot");
     const txt = $("#status-text");
-    if (state.error && !state.data) { dot.className = "dot err"; txt.textContent = "Daten nicht erreichbar"; return; }
+    if (state.error && !state.data) { dot.className = "dot err"; txt.textContent = "offline"; return; }
     dot.className = "dot " + (state.error ? "err" : "ok");
     const gen = state.data?.generated_at;
-    txt.textContent = (state.error ? "Verbindung gestört · " : "") + `Stand ${ago(gen)}`;
+    txt.textContent = (state.error ? "offline · " : "") + ago(gen);
     txt.title = gen ? `Daten von nuLiga abgerufen: ${new Date(gen).toLocaleString("de-DE")}` : "";
-    const season = state.data?.teams?.[0]?.competitions?.[0]?.season;
-    if (season) $("#season").textContent = `${season} · Spielplan, Ergebnisse & Tabellen`;
+    const season = state.data?.teams?.[0]?.competitions?.[0]?.season || "";
+    const year = season.match(/\d{4}\/\d{2}/);
+    $("#season").textContent = year ? `Herren · Saison ${year[0]}` : "Herren";
     if (state.data?.source) $("#source-link").href = state.data.source;
-    $("#generated").textContent = gen ? `Letzter Abruf: ${new Date(gen).toLocaleString("de-DE")}.` : "";
+    $("#generated").textContent = gen ? `Letzter Abruf ${new Date(gen).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}.` : "";
   }
 
   function render() {
@@ -394,6 +408,70 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, 8000);
   }
 
+  // ------------------------------------------------------------------ Designvarianten
+  // Swatch-Farben nur zur Vorschau; die eigentlichen Farben kommen aus style.css (OKLCH-Hues).
+  const VARIANTS = [
+    { id: "lavendel", name: "Lavendel", desc: "Kühl & ruhig – Standard", sw: ["#c8c0f2", "#b9cdf3", "#f3d6c6"] },
+    { id: "morgennebel", name: "Morgennebel", desc: "Frisch, Aqua & Himmel", sw: ["#b4dbe8", "#bfe3dc", "#c9d3f2"] },
+    { id: "abendrot", name: "Abendrot", desc: "Warm, Pfirsich & Sand", sw: ["#f4cfb8", "#f3c9c4", "#eedcb6"] },
+    { id: "salbei", name: "Salbei", desc: "Natürlich & sanft", sw: ["#c6e2cf", "#dbe3bb", "#bfe0de"] },
+    { id: "graphit", name: "Graphit", desc: "Neutral, fast farblos", sw: ["#dfe1e6", "#e8e8e6", "#d8dde5"] },
+  ];
+  const CHECK = '<svg class="ico check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  function setVariant(id, persist = true) {
+    const v = VARIANTS.find((x) => x.id === id) || VARIANTS[0];
+    document.documentElement.dataset.variant = v.id;
+    if (persist) store.set("hblive.variant", v.id);
+    document.querySelectorAll(".variant-opt").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.v === v.id)));
+    const base = getComputedStyle(document.documentElement).getPropertyValue("--base").trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => base && m.setAttribute("content", base));
+  }
+
+  function buildVariantMenu() {
+    $("#variant-menu").innerHTML = `<h3>Design</h3>` + VARIANTS.map((v) => `
+      <button type="button" class="variant-opt" role="menuitemradio" data-v="${v.id}" aria-checked="false">
+        <span class="swatch" style="background:linear-gradient(135deg, ${v.sw[0]} 0%, ${v.sw[1]} 55%, ${v.sw[2]} 100%)" aria-hidden="true"></span>
+        <span>${esc(v.name)}<small>${esc(v.desc)}</small></span>${CHECK}
+      </button>`).join("");
+  }
+
+  function toggleVariantMenu(open) {
+    const menu = $("#variant-menu");
+    const btn = $("#variant-btn");
+    const show = open ?? menu.hidden;
+    menu.hidden = !show;
+    btn.setAttribute("aria-expanded", String(show));
+    if (show) (menu.querySelector('[aria-checked="true"]') || menu.querySelector(".variant-opt"))?.focus();
+  }
+
+  buildVariantMenu();
+  {
+    const fromUrl = new URLSearchParams(location.search).get("design");
+    if (fromUrl && VARIANTS.some((v) => v.id === fromUrl)) setVariant(fromUrl);
+    else setVariant(store.get("hblive.variant", "lavendel"), false);
+  }
+  $("#variant-btn").addEventListener("click", (e) => { e.stopPropagation(); toggleVariantMenu(); });
+  $("#variant-menu").addEventListener("click", (e) => {
+    const b = e.target.closest(".variant-opt");
+    if (!b) return;
+    setVariant(b.dataset.v);
+    toggleVariantMenu(false);
+    $("#variant-btn").focus();
+  });
+  $("#variant-menu").addEventListener("keydown", (e) => {
+    const items = [...document.querySelectorAll(".variant-opt")];
+    const i = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  });
+  document.addEventListener("click", (e) => {
+    if (!$("#variant-menu").hidden && !e.target.closest(".variant-wrap")) toggleVariantMenu(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !$("#variant-menu").hidden) { toggleVariantMenu(false); $("#variant-btn").focus(); }
+  });
+
   // ------------------------------------------------------------------ events
   function setTheme(t) {
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
@@ -414,6 +492,7 @@
     const next = dark ? "light" : "dark";
     setTheme(next);
     store.set("hblive.theme", next);
+    setVariant(document.documentElement.dataset.variant, false);
   });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && (!state.lastFetch || Date.now() - state.lastFetch > 20_000)) load();
